@@ -27,7 +27,7 @@ const CursorEffect = () => {
       style={{ 
         left: `${position.x}px`, 
         top: `${position.y}px`,
-        transition: "left 0.4s ease-out, top 0.4s ease-out" // Slightly faster transition to match jelly effect
+        transition: "left 0.5s ease-out, top 0.5s ease-out" // Smoother, more elegant transition
       }}
     />
   );
