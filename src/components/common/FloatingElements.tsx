@@ -12,6 +12,7 @@ interface Element {
   rotation: number;
   rotationSpeed: number;
   opacity: number;
+  scale: number; // Added scale property for the jelly effect
 }
 
 const FloatingElements = () => {
@@ -43,7 +44,8 @@ const FloatingElements = () => {
         shape: shapes[Math.floor(Math.random() * shapes.length)] as "circle" | "triangle" | "square" | "star",
         rotation: Math.random() * 360,
         rotationSpeed: (Math.random() - 0.5) * 0.2, // Slower rotation
-        opacity: Math.random() * 0.3 + 0.2 // Lower opacity for elegance
+        opacity: Math.random() * 0.3 + 0.2, // Lower opacity for elegance
+        scale: 1 // Default scale
       });
     }
     
@@ -63,12 +65,13 @@ const FloatingElements = () => {
     };
   }, []);
 
-  // Animate elements with gentler motion
+  // Animate elements with gentler motion and jelly effect
   useEffect(() => {
     if (!containerRef.current || elements.length === 0) return;
     
     const { width, height } = containerRef.current.getBoundingClientRect();
     const MOUSE_INFLUENCE_RADIUS = 250; // Larger influence area
+    const JELLY_EFFECT_RADIUS = 120; // Radius for jelly effect (closer than repel radius)
     
     const animate = () => {
       setElements(prevElements => {
@@ -81,16 +84,33 @@ const FloatingElements = () => {
           // Move element away from mouse if within influence radius
           let newX = el.x;
           let newY = el.y;
+          let newScale = el.scale;
           
-          if (distance < MOUSE_INFLUENCE_RADIUS) {
-            // Move away from cursor with gentler strength
+          if (distance < JELLY_EFFECT_RADIUS) {
+            // Apply jelly effect (increase size) when cursor is very close
+            // The closer the cursor, the larger the scale
+            const jelliness = 1 + ((JELLY_EFFECT_RADIUS - distance) / JELLY_EFFECT_RADIUS) * 0.7;
+            newScale = jelliness;
+            
+            // Gentle push away with jelly effect
+            const repelStrength = (1 - distance / JELLY_EFFECT_RADIUS) * 1.5;
+            newX = el.x - (dx / distance) * repelStrength;
+            newY = el.y - (dy / distance) * repelStrength;
+          } else if (distance < MOUSE_INFLUENCE_RADIUS) {
+            // Just move away from cursor with gentler strength (no size change)
             const repelStrength = (1 - distance / MOUSE_INFLUENCE_RADIUS) * 1.2;
             newX = el.x - (dx / distance) * repelStrength;
             newY = el.y - (dy / distance) * repelStrength;
+            
+            // Gradually return to normal size
+            newScale = el.scale > 1 ? el.scale * 0.94 : 1;
           } else {
             // Gentle floating movement using sine waves with very low amplitude
             newX = el.x + Math.sin(Date.now() * 0.0005 + el.id) * el.speed;
             newY = el.y + Math.cos(Date.now() * 0.0005 + el.id * 0.7) * el.speed;
+            
+            // Return to normal size when far from cursor
+            newScale = el.scale > 1 ? el.scale * 0.94 : 1;
           }
           
           // Gentle boundary check with smooth return
@@ -103,7 +123,8 @@ const FloatingElements = () => {
             ...el,
             x: newX,
             y: newY,
-            rotation: (el.rotation + el.rotationSpeed) % 360
+            rotation: (el.rotation + el.rotationSpeed) % 360,
+            scale: newScale
           };
         });
       });
@@ -122,7 +143,7 @@ const FloatingElements = () => {
 
   // Render shapes based on their type
   const renderShape = (element: Element) => {
-    const { shape, size, color, rotation, opacity } = element;
+    const { shape, size, color, rotation, opacity, scale } = element;
     
     switch (shape) {
       case "circle":
@@ -133,7 +154,8 @@ const FloatingElements = () => {
               width: `${size}px`,
               height: `${size}px`,
               backgroundColor: color,
-              opacity: opacity
+              opacity: opacity,
+              transform: `scale(${scale})`
             }}
           />
         );
@@ -145,7 +167,7 @@ const FloatingElements = () => {
               width: `${size}px`,
               height: `${size}px`,
               backgroundColor: color,
-              transform: `rotate(${rotation}deg)`,
+              transform: `rotate(${rotation}deg) scale(${scale})`,
               opacity: opacity
             }}
           />
@@ -158,7 +180,7 @@ const FloatingElements = () => {
               borderLeft: `${size/2}px solid transparent`,
               borderRight: `${size/2}px solid transparent`,
               borderBottom: `${size}px solid ${color}`,
-              transform: `rotate(${rotation}deg)`,
+              transform: `rotate(${rotation}deg) scale(${scale})`,
               opacity: opacity
             }}
           />
@@ -170,7 +192,7 @@ const FloatingElements = () => {
             style={{
               width: `${size}px`,
               height: `${size}px`,
-              transform: `rotate(${rotation}deg)`,
+              transform: `rotate(${rotation}deg) scale(${scale})`,
               opacity: opacity
             }}
           >
@@ -202,7 +224,9 @@ const FloatingElements = () => {
             left: `${element.x}px`,
             top: `${element.y}px`,
             transform: `rotate(${element.rotation}deg)`,
-            transition: "transform 1.5s ease-out, left 2s ease-out, top 2s ease-out", // Smoother transitions
+            transition: element.scale > 1 
+              ? "transform 0.2s cubic-bezier(0.68, -0.55, 0.27, 1.55), left 2s ease-out, top 2s ease-out" // Bouncy transition when expanding
+              : "transform 0.5s ease-out, left 2s ease-out, top 2s ease-out", // Smoother transition when returning to normal
             opacity: element.opacity
           }}
         >
