@@ -11,6 +11,7 @@ interface Element {
   shape: "circle" | "triangle" | "square" | "star";
   rotation: number;
   rotationSpeed: number;
+  opacity: number;
 }
 
 const FloatingElements = () => {
@@ -25,10 +26,10 @@ const FloatingElements = () => {
     
     const { width, height } = containerRef.current.getBoundingClientRect();
     const shapes = ["circle", "triangle", "square", "star"];
-    const colors = ["#6E59A5", "#9b87f5", "#D6BCFA", "#7E69AB", "#E5DEFF"];
+    const colors = ["#E5DEFF", "#D3E4FD", "#FFDEE2", "#F1F0FB", "#6E59A5", "#9b87f5"];
     
-    // Create 20-30 random elements
-    const elementCount = Math.floor(Math.random() * 11) + 20;
+    // Create 15-20 random elements (reduced count for elegance)
+    const elementCount = Math.floor(Math.random() * 6) + 15;
     const newElements: Element[] = [];
     
     for (let i = 0; i < elementCount; i++) {
@@ -36,12 +37,13 @@ const FloatingElements = () => {
         id: i,
         x: Math.random() * width,
         y: Math.random() * height,
-        size: Math.random() * 30 + 10,
+        size: Math.random() * 25 + 8, // Slightly smaller elements
         color: colors[Math.floor(Math.random() * colors.length)],
-        speed: Math.random() * 0.5 + 0.1,
+        speed: Math.random() * 0.2 + 0.05, // Much slower speed for calmness
         shape: shapes[Math.floor(Math.random() * shapes.length)] as "circle" | "triangle" | "square" | "star",
         rotation: Math.random() * 360,
-        rotationSpeed: (Math.random() - 0.5) * 0.5
+        rotationSpeed: (Math.random() - 0.5) * 0.2, // Slower rotation
+        opacity: Math.random() * 0.3 + 0.2 // Lower opacity for elegance
       });
     }
     
@@ -61,12 +63,12 @@ const FloatingElements = () => {
     };
   }, []);
 
-  // Animate elements
+  // Animate elements with gentler motion
   useEffect(() => {
     if (!containerRef.current || elements.length === 0) return;
     
     const { width, height } = containerRef.current.getBoundingClientRect();
-    const MOUSE_INFLUENCE_RADIUS = 200;
+    const MOUSE_INFLUENCE_RADIUS = 250; // Larger influence area
     
     const animate = () => {
       setElements(prevElements => {
@@ -81,21 +83,21 @@ const FloatingElements = () => {
           let newY = el.y;
           
           if (distance < MOUSE_INFLUENCE_RADIUS) {
-            // Move away from cursor with strength inversely proportional to distance
-            const repelStrength = (1 - distance / MOUSE_INFLUENCE_RADIUS) * 2;
+            // Move away from cursor with gentler strength
+            const repelStrength = (1 - distance / MOUSE_INFLUENCE_RADIUS) * 1.2;
             newX = el.x - (dx / distance) * repelStrength;
             newY = el.y - (dy / distance) * repelStrength;
           } else {
-            // Normal floating movement
-            newX = el.x + Math.sin(Date.now() * 0.001 + el.id) * el.speed;
-            newY = el.y + Math.cos(Date.now() * 0.001 + el.id) * el.speed;
+            // Gentle floating movement using sine waves with very low amplitude
+            newX = el.x + Math.sin(Date.now() * 0.0005 + el.id) * el.speed;
+            newY = el.y + Math.cos(Date.now() * 0.0005 + el.id * 0.7) * el.speed;
           }
           
-          // Boundary check
-          if (newX < 0) newX = width;
-          if (newX > width) newX = 0;
-          if (newY < 0) newY = height;
-          if (newY > height) newY = 0;
+          // Gentle boundary check with smooth return
+          if (newX < 0) newX = newX + el.speed * 2;
+          if (newX > width) newX = newX - el.speed * 2;
+          if (newY < 0) newY = newY + el.speed * 2;
+          if (newY > height) newY = newY - el.speed * 2;
           
           return {
             ...el,
@@ -120,7 +122,7 @@ const FloatingElements = () => {
 
   // Render shapes based on their type
   const renderShape = (element: Element) => {
-    const { shape, size, color, rotation } = element;
+    const { shape, size, color, rotation, opacity } = element;
     
     switch (shape) {
       case "circle":
@@ -131,7 +133,7 @@ const FloatingElements = () => {
               width: `${size}px`,
               height: `${size}px`,
               backgroundColor: color,
-              opacity: 0.6
+              opacity: opacity
             }}
           />
         );
@@ -144,7 +146,7 @@ const FloatingElements = () => {
               height: `${size}px`,
               backgroundColor: color,
               transform: `rotate(${rotation}deg)`,
-              opacity: 0.6
+              opacity: opacity
             }}
           />
         );
@@ -157,7 +159,7 @@ const FloatingElements = () => {
               borderRight: `${size/2}px solid transparent`,
               borderBottom: `${size}px solid ${color}`,
               transform: `rotate(${rotation}deg)`,
-              opacity: 0.6
+              opacity: opacity
             }}
           />
         );
@@ -169,7 +171,7 @@ const FloatingElements = () => {
               width: `${size}px`,
               height: `${size}px`,
               transform: `rotate(${rotation}deg)`,
-              opacity: 0.6
+              opacity: opacity
             }}
           >
             <svg 
@@ -200,8 +202,8 @@ const FloatingElements = () => {
             left: `${element.x}px`,
             top: `${element.y}px`,
             transform: `rotate(${element.rotation}deg)`,
-            transition: "transform 0.5s ease-out",
-            opacity: 0.6
+            transition: "transform 1.5s ease-out, left 2s ease-out, top 2s ease-out", // Smoother transitions
+            opacity: element.opacity
           }}
         >
           {renderShape(element)}
