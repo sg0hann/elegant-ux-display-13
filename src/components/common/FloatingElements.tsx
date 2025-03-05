@@ -11,8 +11,6 @@ interface Element {
   shape: "circle" | "triangle" | "square" | "star";
   rotation: number;
   rotationSpeed: number;
-  opacity: number;
-  scale: number; // Add scale property for jelly effect
 }
 
 const FloatingElements = () => {
@@ -27,10 +25,10 @@ const FloatingElements = () => {
     
     const { width, height } = containerRef.current.getBoundingClientRect();
     const shapes = ["circle", "triangle", "square", "star"];
-    const colors = ["#E5DEFF", "#D3E4FD", "#FFDEE2", "#F1F0FB", "#6E59A5", "#9b87f5"];
+    const colors = ["#6E59A5", "#9b87f5", "#D6BCFA", "#7E69AB", "#E5DEFF"];
     
-    // Create 15-20 random elements (reduced count for elegance)
-    const elementCount = Math.floor(Math.random() * 6) + 15;
+    // Create 20-30 random elements
+    const elementCount = Math.floor(Math.random() * 11) + 20;
     const newElements: Element[] = [];
     
     for (let i = 0; i < elementCount; i++) {
@@ -38,14 +36,12 @@ const FloatingElements = () => {
         id: i,
         x: Math.random() * width,
         y: Math.random() * height,
-        size: Math.random() * 25 + 8, // Slightly smaller elements
+        size: Math.random() * 30 + 10,
         color: colors[Math.floor(Math.random() * colors.length)],
-        speed: Math.random() * 0.2 + 0.05, // Much slower speed for calmness
+        speed: Math.random() * 0.5 + 0.1,
         shape: shapes[Math.floor(Math.random() * shapes.length)] as "circle" | "triangle" | "square" | "star",
         rotation: Math.random() * 360,
-        rotationSpeed: (Math.random() - 0.5) * 0.2, // Slower rotation
-        opacity: Math.random() * 0.3 + 0.2, // Lower opacity for elegance
-        scale: 1 // Default scale
+        rotationSpeed: (Math.random() - 0.5) * 0.5
       });
     }
     
@@ -65,13 +61,12 @@ const FloatingElements = () => {
     };
   }, []);
 
-  // Animate elements with gentler motion
+  // Animate elements
   useEffect(() => {
     if (!containerRef.current || elements.length === 0) return;
     
     const { width, height } = containerRef.current.getBoundingClientRect();
-    const MOUSE_INFLUENCE_RADIUS = 180; // Slightly reduced influence area for more subtle effect
-    const JELLY_EFFECT_RADIUS = 200; // Radius for jelly effect
+    const MOUSE_INFLUENCE_RADIUS = 200;
     
     const animate = () => {
       setElements(prevElements => {
@@ -84,37 +79,29 @@ const FloatingElements = () => {
           // Move element away from mouse if within influence radius
           let newX = el.x;
           let newY = el.y;
-          let newScale = el.scale;
           
           if (distance < MOUSE_INFLUENCE_RADIUS) {
-            // Move away from cursor with gentler strength
-            const repelStrength = (1 - distance / MOUSE_INFLUENCE_RADIUS) * 0.8;
+            // Move away from cursor with strength inversely proportional to distance
+            const repelStrength = (1 - distance / MOUSE_INFLUENCE_RADIUS) * 2;
             newX = el.x - (dx / distance) * repelStrength;
             newY = el.y - (dy / distance) * repelStrength;
-            
-            // Apply jelly-like scaling effect - more when closer to cursor
-            newScale = 1 + (1 - Math.min(distance, JELLY_EFFECT_RADIUS) / JELLY_EFFECT_RADIUS) * 0.35;
           } else {
-            // Gentle floating movement using sine waves with very low amplitude
-            newX = el.x + Math.sin(Date.now() * 0.0005 + el.id) * el.speed;
-            newY = el.y + Math.cos(Date.now() * 0.0005 + el.id * 0.7) * el.speed;
-            
-            // Gradually return to normal scale
-            newScale = el.scale > 1 ? el.scale - 0.02 : 1;
+            // Normal floating movement
+            newX = el.x + Math.sin(Date.now() * 0.001 + el.id) * el.speed;
+            newY = el.y + Math.cos(Date.now() * 0.001 + el.id) * el.speed;
           }
           
-          // Gentle boundary check with smooth return
-          if (newX < 0) newX = newX + el.speed * 2;
-          if (newX > width) newX = newX - el.speed * 2;
-          if (newY < 0) newY = newY + el.speed * 2;
-          if (newY > height) newY = newY - el.speed * 2;
+          // Boundary check
+          if (newX < 0) newX = width;
+          if (newX > width) newX = 0;
+          if (newY < 0) newY = height;
+          if (newY > height) newY = 0;
           
           return {
             ...el,
             x: newX,
             y: newY,
-            rotation: (el.rotation + el.rotationSpeed) % 360,
-            scale: newScale
+            rotation: (el.rotation + el.rotationSpeed) % 360
           };
         });
       });
@@ -133,7 +120,7 @@ const FloatingElements = () => {
 
   // Render shapes based on their type
   const renderShape = (element: Element) => {
-    const { shape, size, color, rotation, opacity, scale } = element;
+    const { shape, size, color, rotation } = element;
     
     switch (shape) {
       case "circle":
@@ -144,9 +131,7 @@ const FloatingElements = () => {
               width: `${size}px`,
               height: `${size}px`,
               backgroundColor: color,
-              opacity: opacity,
-              transform: `scale(${scale})`,
-              transition: "transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1)" // Jelly-like elastic transition
+              opacity: 0.6
             }}
           />
         );
@@ -158,9 +143,8 @@ const FloatingElements = () => {
               width: `${size}px`,
               height: `${size}px`,
               backgroundColor: color,
-              transform: `rotate(${rotation}deg) scale(${scale})`,
-              opacity: opacity,
-              transition: "transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1)"
+              transform: `rotate(${rotation}deg)`,
+              opacity: 0.6
             }}
           />
         );
@@ -172,9 +156,8 @@ const FloatingElements = () => {
               borderLeft: `${size/2}px solid transparent`,
               borderRight: `${size/2}px solid transparent`,
               borderBottom: `${size}px solid ${color}`,
-              transform: `rotate(${rotation}deg) scale(${scale})`,
-              opacity: opacity,
-              transition: "transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1)"
+              transform: `rotate(${rotation}deg)`,
+              opacity: 0.6
             }}
           />
         );
@@ -185,9 +168,8 @@ const FloatingElements = () => {
             style={{
               width: `${size}px`,
               height: `${size}px`,
-              transform: `rotate(${rotation}deg) scale(${scale})`,
-              opacity: opacity,
-              transition: "transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1)"
+              transform: `rotate(${rotation}deg)`,
+              opacity: 0.6
             }}
           >
             <svg 
@@ -218,8 +200,8 @@ const FloatingElements = () => {
             left: `${element.x}px`,
             top: `${element.y}px`,
             transform: `rotate(${element.rotation}deg)`,
-            transition: "left 1.2s cubic-bezier(0.22, 1, 0.36, 1), top 1.2s cubic-bezier(0.22, 1, 0.36, 1)", // Smoother movement transitions
-            opacity: element.opacity
+            transition: "transform 0.5s ease-out",
+            opacity: 0.6
           }}
         >
           {renderShape(element)}

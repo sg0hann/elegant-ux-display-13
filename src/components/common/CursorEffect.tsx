@@ -23,11 +23,11 @@ const CursorEffect = () => {
   
   return (
     <div 
-      className="fixed pointer-events-none w-[450px] h-[450px] rounded-full bg-white/3 blur-[120px] -translate-x-1/2 -translate-y-1/2 z-0"
+      className="fixed pointer-events-none w-[350px] h-[350px] rounded-full bg-white/5 blur-[80px] -translate-x-1/2 -translate-y-1/2 z-0"
       style={{ 
         left: `${position.x}px`, 
         top: `${position.y}px`,
-        transition: "left 0.8s cubic-bezier(0.34, 1.56, 0.64, 1), top 0.8s cubic-bezier(0.34, 1.56, 0.64, 1)" // More elegant, slightly bouncy transition
+        transition: "left 0.2s ease-out, top 0.2s ease-out"
       }}
     />
   );
